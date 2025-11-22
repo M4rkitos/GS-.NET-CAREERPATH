@@ -1,18 +1,30 @@
-// Localização: CareerPath.WebAPI/Program.cs (Bloco builder.Services)
+// Arquivo: Program.cs (Camada WebAPI)
 
-// 1. Adiciona o serviço para acessar o contexto HTTP de forma segura.
-builder.Services.AddHttpContextAccessor(); 
+// ... código anterior
 
-// 2. Registra o IUriService. Usamos AddSingleton neste caso.
-builder.Services.AddSingleton<IUriService>(o =>
+var app = builder.Build();
+
+// Bloco de Aplicação de Migrações (SOLUÇÃO DE BYPASS DO DOTNET EF)
+using (var scope = app.Services.CreateScope())
 {
-    // Obtém o contexto HTTP
-    var accessor = o.GetRequiredService<IHttpContextAccessor>();
-    var request = accessor.HttpContext!.Request;
-    
-    // Constrói a URI base (ex: https://localhost:5001/)
-    var uri = string.Concat(request.Scheme, "://", request.Host.ToUriString());
-    
-    // Retorna a implementação (UriService)
-    return new UriService(uri);
-});
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Obtém o contexto do banco de dados
+        var context = services.GetRequiredService<ApplicationDbContext>(); 
+        
+        // Aplica a migração pendente, criando o banco de dados e as tabelas
+        context.Database.Migrate(); 
+
+        Console.WriteLine("INFO: Migrações aplicadas com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        // Se houver erro de conexão (o que não deve ocorrer mais), o erro será logado
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "ERRO: Ocorreu um erro durante a migração do banco de dados.");
+    }
+}
+// Fim do Bloco de Migrações
+
+// ... código do pipeline (app.UseSwagger, app.UseHttpsRedirection, etc.)
