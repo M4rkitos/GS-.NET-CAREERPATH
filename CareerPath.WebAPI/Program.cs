@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
-// Usings das camadas do projeto
+// Usings das camadas
 using CareerPath.Infrastructure.Data;
 using CareerPath.Infrastructure.Repositories;
 using CareerPath.Application.Interfaces;
@@ -13,36 +13,34 @@ using CareerPath.WebAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Adicionar Serviços ao Container
+// 1. Adicionar Serviços
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2. Configuração do Banco de Dados (PostgreSQL)
-// Lê a ConnectionString do appsettings.json
+// 2. CONFIGURAÇÃO DO BANCO DE DADOS (HARDCODED PARA GARANTIR)
+// Conecta direto na VM Linux (10.0.0.4)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql("Host=10.0.0.4;Port=5432;Database=CareerPathDB;Username=postgres;Password=Abc123456789!;"));
 
-// 3. Injeção de Dependência (Vínculo entre Interface e Implementação)
+// 3. Injeção de Dependência
 builder.Services.AddScoped<IProfissionalRepository, ProfissionalRepository>();
-// Se você tiver outros repositórios, adicione-os aqui
 builder.Services.AddScoped<IMatchService, MatchService>();
 
-// 4. Configuração do HATEOAS (UriService)
+// 4. Configuração do HATEOAS (Corrigida)
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<UriService>(o =>
 {
     var accessor = o.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>();
     var request = accessor.HttpContext.Request;
-    // CORREÇÃO APLICADA AQUI: .ToUriComponent()
+    // Fix: Usando ToUriComponent()
     var uri = string.Concat(request.Scheme, "://", request.Host.ToUriComponent());
     return new UriService(uri);
 });
 
 var app = builder.Build();
 
-// 5. MIGRAÇÃO AUTOMÁTICA AO INICIAR
-// Tenta conectar ao PostgreSQL na VM Linux e criar o banco
+// 5. MIGRAÇÃO AUTOMÁTICA (Cria o banco no Linux ao rodar)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -50,16 +48,17 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
         context.Database.Migrate(); // Aplica as tabelas
-        Console.WriteLine("INFO: Banco de dados migrado e conectado com sucesso!");
+        Console.WriteLine("INFO: SUCESSO! Banco de dados migrado e conectado no Linux!");
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "ERRO CRÍTICO: Falha ao conectar ou migrar o banco de dados.");
+        // Se der erro, ele vai mostrar o motivo detalhado no console
+        logger.LogError(ex, "ERRO CRÍTICO: Falha ao conectar no PostgreSQL.");
     }
 }
 
-// Configuração do Pipeline HTTP
+// Configuração do Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
