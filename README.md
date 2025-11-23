@@ -2,79 +2,86 @@
 
 ## 💡 Visão Geral do Projeto
 
-O **CareerPath** é uma Web API desenvolvida em **ASP.NET Core** que atua como um motor de recomendação. A solução visa mitigar o desafio da **Adaptação de Carreiras** no mercado de trabalho, cruzando o perfil do profissional (profissão e experiência) com um catálogo de **Habilidades Futuras** e **Cursos** de alta demanda. O objetivo é fornecer um caminho claro para o *upskilling* e aumentar a relevância profissional dos usuários.
+O **CareerPath** é uma Web API desenvolvida em **ASP.NET Core 8** que atua como um motor de recomendação para o mercado de trabalho. A solução cruza o perfil do profissional (profissão atual e experiência) com um catálogo de **Habilidades Futuras** e **Cursos** de alta demanda, sugerindo caminhos de *upskilling* personalizados.
+
+### 🎯 Objetivos
+* Mitigar a lacuna de habilidades (*skills gap*) no mercado de trabalho.
+* Fornecer uma API robusta para integração com Front-ends Web e Mobile.
+* Demonstrar uma arquitetura distribuída, escalável e aderente às melhores práticas de mercado.
 
 ---
 
-## 🏗️ Decisões Arquiteturais
+## 🏗️ Arquitetura e Design
 
-O projeto foi construído utilizando a **Clean Architecture** e o **Domain-Driven Design (DDD)** para garantir alta manutenibilidade e testabilidade.
+O projeto segue rigorosamente os princípios da **Clean Architecture** e **Domain-Driven Design (DDD)** para garantir a separação de responsabilidades, testabilidade e manutenção.
 
-* **Domain (`CareerPath.Domain`):** Contém as **Entidades** (`Profissional`, `Habilidade`, `Curso`), suas **Invariantes** e as **Exceções de Regra de Negócio**.
-* **Application (`CareerPath.Application`):** Contém os **DTOs**, as **Interfaces de Repositório** e os **Serviços de Aplicação** (`IMatchService`).
-* **Infrastructure (`CareerPath.Infrastructure`):** Implementa o **EF Core** (`ApplicationDbContext`), as **Migrations** e os **Repositórios Concretos**.
-* **WebAPI (`CareerPath.WebAPI`):** Camada de Apresentação (**Controllers** e **HATEOAS**).
-
-### Qualidade e Conformidade
-* **Invariantes de Domínio:** As entidades garantem a validade de seu estado através de validações no construtor.
-* **Tratamento de Erros (ProblemDetails):** Exceções de Domínio são capturadas por um filtro global e convertidas em respostas padronizadas **HTTP 400 Bad Request** no formato **ProblemDetails** (RFC 7807).
+### Estrutura de Camadas
+* **`CareerPath.Domain`**: O núcleo do sistema. Contém as Entidades (`Profissional`, `Habilidade`, `Curso`), Invariantes e Regras de Negócio. Não possui dependências de outras camadas.
+* **`CareerPath.Application`**: Camada de orquestração. Contém os Serviços (`MatchService`), DTOs, Interfaces e Lógica de Aplicação.
+* **`CareerPath.Infrastructure`**: Camada de dados e implementação. Gerencia o acesso ao banco via **Entity Framework Core**, Mapeamentos e Repositórios.
+* **`CareerPath.WebAPI`**: Camada de entrada. Contém os Controllers RESTful, Configuração de Injeção de Dependência (DI) e Swagger.
 
 ---
 
-## ⚙️ Pré-requisitos e Execução
+## ⚙️ Tecnologias e Ferramentas
 
-### Pré-requisitos e Variáveis de Ambiente
-É necessário ter o **.NET 8 SDK** instalado. A String de Conexão com o banco de dados deve ser configurada no arquivo `CareerPath.WebAPI/appsettings.json` na chave `DefaultConnection`.
-
-### Instruções de Execução
-As instruções devem ser executadas via terminal na **raiz da solução**.
-
-1.  **Restaurar Pacotes:**
-    ```bash
-    dotnet restore
-    ```
-
-2.  **Aplicar Migrations (Criação do Banco de Dados):**
-    * Este comando cria o banco e as tabelas, cumprindo o requisito de **Migrations aplicadas**:
-    ```bash
-    dotnet ef database update --project CareerPath.Infrastructure --startup-project CareerPath.WebAPI
-    ```
-
-3.  **Executar a API Web:**
-    ```bash
-    dotnet run --project CareerPath.WebAPI
-    ```
+* **Framework:** .NET 8 SDK
+* **Banco de Dados:** PostgreSQL 16
+* **ORM:** Entity Framework Core (Npgsql)
+* **Documentação:** Swagger / OpenAPI
+* **Padrões:** Repository Pattern, HATEOAS, ProblemDetails (RFC 7807)
 
 ---
 
-## 🌐 Rotas e Exemplos de Uso
+## 🚀 Como Rodar o Projeto
 
-A documentação interativa completa (com exemplos) está disponível no **Swagger UI** (acessível em `/swagger` após a execução).
+### Pré-requisitos
+1. Ter o **.NET 8 SDK** instalado.
+2. Ter acesso a uma instância **PostgreSQL** (Local ou em VM/Cloud).
 
-| Método | Rota | Descrição |
-| :--- | :--- | :--- |
-| **POST** | `/api/habilidades` | **CRUD:** Cria uma nova Habilidade. |
-| **GET** | `/api/habilidades/{id}` | **CRUD:** Busca Habilidade por ID. |
-| **GET** | `/api/habilidades/search` | **BUSCA AVANÇADA** com Paginação, Filtros, Ordenação e HATEOAS. |
+### Configuração da Conexão
+O projeto está configurado para aplicar migrações automaticamente ao iniciar. Você deve configurar a string de conexão no arquivo `appsettings.json` dentro da pasta `CareerPath.WebAPI`.
 
-### Exemplo de Uso (Busca e HATEOAS)
-O endpoint `/search` implementa filtros (`NomeContem`, `NivelDemandaMin`), Paginação e Ordenação.
-
-**Exemplo de Requisição (via cURL):**
-```bash
-curl -X 'GET' 'https://localhost:[PORTA]/api/habilidades/search?Pagina=2&TamanhoPagina=10&NivelDemandaMin=7&OrdenarPor=DemandaDesc'
-
-
-Exemplo da Resposta JSON (com HATEOAS): A resposta incluirá links de navegação autodescritivos:
-
-JSON
-
+Exemplo de configuração (`appsettings.json`):
+```json
 {
-    // ... dados de metadados
-    "dados": [...],
-    "proximaPaginaUri": "https://localhost:[PORTA]/api/habilidades/search?Pagina=3&...",
-    "paginaAnteriorUri": "https://localhost:[PORTA]/api/habilidades/search?Pagina=1&..."
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=SEU_IP_OU_LOCALHOST;Port=5432;Database=CareerPathDB;Username=postgres;Password=SUA_SENHA;"
+  }
 }
+
+Execução (Passo a Passo)
+Abra o terminal na pasta raiz da solução e execute:
+
+Bash
+
+# 1. Restaurar dependências e compilar
+dotnet restore
+
+# 2. Navegar para a pasta da API
+cd CareerPath.WebAPI
+
+# 3. Iniciar a aplicação
+# (Este comando criará o Banco de Dados automaticamente via Migrations)
+dotnet run
+
+A API estará disponível em: http://localhost:5000 (ou porta configurada). A documentação Swagger estará em: http://localhost:5000/swagger
+
+
+🌐 Rotas e Endpoints PrincipaisA API implementa o padrão HATEOAS no endpoint de busca, fornecendo links de navegação para paginação.
+Método,Rota,Descrição
+POST,/api/habilidades,CRUD: Cria uma nova Habilidade no catálogo.
+GET,/api/habilidades/{id},CRUD: Busca detalhes de uma Habilidade.
+GET,/api/habilidades/search,"BUSCA AVANÇADA: Retorna lista paginada com suporte a filtros (Nome, NivelDemanda) e ordenação."
+POST,/api/profissionais,Cria um perfil profissional para teste de match.
+
+🔑 Qualidade e Compliance
+Tratamento de Erros: Implementação global de tratamento de exceções utilizando o padrão ProblemDetails, garantindo respostas de erro consistentes e informativas.
+
+Validação de Domínio: As entidades de domínio protegem suas invariantes (ex: valores negativos, campos obrigatórios) diretamente no construtor, garantindo a integridade dos dados.
+
+
+
 
 
 
