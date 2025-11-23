@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System;
-// Importa as camadas que conectamos no .csproj
+// CORREÇÃO DOS USINGS:
 using CareerPath.Application.DTOs;
-using CareerPath.Application.Services;
-using CareerPath.WebAPI.Services; // Para o UriService
+using CareerPath.Application.Interfaces; // Interface está aqui
+using CareerPath.WebAPI.Services; 
 
 namespace CareerPath.WebAPI.Controllers
 {
@@ -24,22 +24,16 @@ namespace CareerPath.WebAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] HabilidadeCreateDto dto)
         {
-            // Simulação de criação para o teste
-            return Ok(new { Message = "Habilidade Criada", Data = dto });
+            var habilidade = await _matchService.CriarHabilidadeAsync(dto);
+            return Ok(habilidade);
         }
 
         [HttpGet]
         [Route("search")]
         public async Task<IActionResult> Search([FromQuery] HabilidadeSearchQuery query)
         {
-            var resultadosPaginados = await _matchService.BuscarHabilidadesPaginadasAsync(query);
-            
-            var route = Request.Path.Value!;
-            
-            // Lógica HATEOAS simplificada para o teste
-            resultadosPaginados.PrimeiraPaginaUri = _uriService.GetPaginatedSearchUri(route, query, 1, resultadosPaginados.TotalPaginas).ToString();
-            
-            return Ok(resultadosPaginados);
+            var resultados = await _matchService.BuscarHabilidadesPaginadasAsync(query);
+            return Ok(resultados);
         }
     }
 }
