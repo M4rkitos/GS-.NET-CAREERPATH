@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CareerPath.Application\CareerPath.Application.csproj" /> 
-    <ProjectReference Include="..\..\CareerPath.Domain\CareerPath.Domain.csproj" />
+    <ProjectReference Include="..\CareerPath.Application\CareerPath.Application.csproj" /> 
+    <ProjectReference Include="..\CareerPath.Domain\CareerPath.Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
